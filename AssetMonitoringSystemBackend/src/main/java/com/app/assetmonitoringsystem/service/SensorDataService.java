@@ -42,6 +42,7 @@ public class SensorDataService {
 
     /**
      * Ingest sensor data, check thresholds, and trigger alerts if needed.
+     * Null-safe: skips threshold check if the asset's threshold value is null.
      */
     @Transactional
     public SensorDataDTO ingestSensorData(SensorDataDTO dto) {
@@ -59,8 +60,9 @@ public class SensorDataService {
         logger.info("Sensor data ingested for Asset #{}: temp={}, pressure={}",
                 asset.getId(), dto.getTemperature(), dto.getPressure());
 
-        // Check temperature threshold
-        if (dto.getTemperature() > asset.getThresholdTemp()) {
+        // Check temperature threshold (null-safe to prevent NPE)
+        if (asset.getThresholdTemp() != null && dto.getTemperature() != null
+                && dto.getTemperature() > asset.getThresholdTemp()) {
             String message = String.format(
                     "ALERT: Temperature %.1f°C exceeds threshold %.1f°C for asset '%s' (ID: %d)",
                     dto.getTemperature(), asset.getThresholdTemp(), asset.getName(), asset.getId());
@@ -70,18 +72,12 @@ public class SensorDataService {
             logger.warn(message);
 
             // Publish alert to RabbitMQ
-            try {
-                rabbitTemplate.convertAndSend(
-                        RabbitMQConfig.ALERT_EXCHANGE,
-                        RabbitMQConfig.ALERT_ROUTING_KEY,
-                        message);
-            } catch (Exception e) {
-                logger.warn("RabbitMQ unavailable, alert logged to console: {}", message);
-            }
+            publishToRabbitMQ(message);
         }
 
-        // Check pressure threshold
-        if (dto.getPressure() > asset.getThresholdPressure()) {
+        // Check pressure threshold (null-safe to prevent NPE)
+        if (asset.getThresholdPressure() != null && dto.getPressure() != null
+                && dto.getPressure() > asset.getThresholdPressure()) {
             String message = String.format(
                     "ALERT: Pressure %.1f exceeds threshold %.1f for asset '%s' (ID: %d)",
                     dto.getPressure(), asset.getThresholdPressure(), asset.getName(), asset.getId());
@@ -91,14 +87,7 @@ public class SensorDataService {
             logger.warn(message);
 
             // Publish alert to RabbitMQ
-            try {
-                rabbitTemplate.convertAndSend(
-                        RabbitMQConfig.ALERT_EXCHANGE,
-                        RabbitMQConfig.ALERT_ROUTING_KEY,
-                        message);
-            } catch (Exception e) {
-                logger.warn("RabbitMQ unavailable, alert logged to console: {}", message);
-            }
+            publishToRabbitMQ(message);
         }
 
         return toDTO(saved);
@@ -114,6 +103,17 @@ public class SensorDataService {
         }
         return sensorDataRepository.findByAssetIdOrderByTimestampDesc(assetId, pageable)
                 .map(this::toDTO);
+    }
+
+    private void publishToRabbitMQ(String message) {
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.ALERT_EXCHANGE,
+                    RabbitMQConfig.ALERT_ROUTING_KEY,
+                    message);
+        } catch (Exception e) {
+            logger.warn("RabbitMQ unavailable, alert logged to console: {}", message);
+        }
     }
 
     private SensorDataDTO toDTO(SensorData data) {

@@ -24,4 +24,6 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     Page<Alert> findByAssetIdOrderByTriggeredAtDesc(Long assetId, Pageable pageable);
 
     long countByStatus(AlertStatus status);
+
+    long countByAssetIdAndStatus(Long assetId, AlertStatus status);
 }

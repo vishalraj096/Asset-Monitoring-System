@@ -8,6 +8,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/uptime")
 public class UptimeLogController {
@@ -24,5 +26,11 @@ public class UptimeLogController {
             @RequestParam(defaultValue = "10") int size) {
         Page<UptimeLogDTO> logs = uptimeService.getUptimeByAsset(id, PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success("Uptime logs retrieved successfully", logs));
+    }
+
+    @GetMapping("/asset/{id}/summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getUptimeSummary(@PathVariable Long id) {
+        Map<String, Object> summary = uptimeService.getUptimeSummary(id);
+        return ResponseEntity.ok(ApiResponse.success("Uptime summary retrieved successfully", summary));
     }
 }
