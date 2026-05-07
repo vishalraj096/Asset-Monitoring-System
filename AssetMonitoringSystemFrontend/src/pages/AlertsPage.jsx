@@ -7,6 +7,7 @@ export default function AlertsPage() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
 
   const fetchAlerts = async () => {
     setLoading(true);
@@ -31,6 +32,10 @@ export default function AlertsPage() {
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Failed to resolve'));
     }
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
   };
 
   return (
@@ -63,36 +68,51 @@ export default function AlertsPage() {
             <tbody>
               {alerts.length === 0 ? (
                 <tr><td colSpan="7" className="px-4 py-8 text-center text-slate-500">No alerts found</td></tr>
-              ) : alerts.map((a) => (
-                <tr key={a.id} className="border-b border-slate-700/50 hover:bg-slate-750/50">
-                  <td className="px-4 py-3 text-slate-300">{a.id}</td>
-                  <td className="px-4 py-3">
-                    <Link to={`/assets/${a.assetId}`} className="text-blue-400 hover:text-blue-300 font-medium">
-                      {a.assetName}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      a.type === 'TEMP_HIGH' ? 'bg-orange-900/30 text-orange-300 border border-orange-800/50' : 'bg-purple-900/30 text-purple-300 border border-purple-800/50'
-                    }`}>{a.type}</span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{a.message}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      a.status === 'ACTIVE' ? 'bg-red-900/30 text-red-300 border border-red-800/50' : 'bg-green-900/30 text-green-300 border border-green-800/50'
-                    }`}>{a.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{formatTimestamp(a.triggeredAt)}</td>
-                  <td className="px-4 py-3">
-                    {a.status === 'ACTIVE' && (
-                      <button onClick={() => resolveAlert(a.id)}
-                        className="px-2 py-1 rounded text-xs font-medium text-green-300 bg-green-900/30 hover:bg-green-900/50 border border-green-800/50 transition-colors">
-                        Resolve
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              ) : alerts.map((a) => {
+                const isExpanded = expandedId === a.id;
+                return (
+                  <tr key={a.id} className="border-b border-slate-700/50 hover:bg-slate-750/50 align-top">
+                    <td className="px-4 py-3 text-slate-300">{a.id}</td>
+                    <td className="px-4 py-3">
+                      <Link to={`/assets/${a.assetId}`} className="text-blue-400 hover:text-blue-300 font-medium">
+                        {a.assetName}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        a.type === 'TEMP_HIGH' ? 'bg-orange-900/30 text-orange-300 border border-orange-800/50' : 'bg-purple-900/30 text-purple-300 border border-purple-800/50'
+                      }`}>{a.type}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300 max-w-xs">
+                      <div className={isExpanded ? '' : 'truncate'}>
+                        {a.message}
+                      </div>
+                      {a.message && a.message.length > 40 && (
+                        <button
+                          onClick={() => toggleExpand(a.id)}
+                          className="text-xs text-blue-400 hover:text-blue-300 mt-1 inline-block"
+                        >
+                          {isExpanded ? '▲ Collapse' : '▼ Expand'}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        a.status === 'ACTIVE' ? 'bg-red-900/30 text-red-300 border border-red-800/50' : 'bg-green-900/30 text-green-300 border border-green-800/50'
+                      }`}>{a.status}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{formatTimestamp(a.triggeredAt)}</td>
+                    <td className="px-4 py-3">
+                      {a.status === 'ACTIVE' && (
+                        <button onClick={() => resolveAlert(a.id)}
+                          className="px-2 py-1 rounded text-xs font-medium text-green-300 bg-green-900/30 hover:bg-green-900/50 border border-green-800/50 transition-colors">
+                          Resolve
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

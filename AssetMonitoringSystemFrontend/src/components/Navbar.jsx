@@ -1,9 +1,10 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const { user, logout, isManager } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -11,6 +12,13 @@ export default function Navbar() {
   };
 
   if (!user) return null;
+
+  const navLinks = [
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/alerts', label: 'Alerts' },
+    { to: '/sensor-simulator', label: 'Sensor Simulator' },
+    ...(isManager() ? [{ to: '/users', label: 'Users' }] : []),
+  ];
 
   return (
     <nav className="bg-slate-800 border-b border-slate-700">
@@ -21,32 +29,24 @@ export default function Navbar() {
               EAMS
             </Link>
             <div className="flex items-center gap-1">
-              <Link
-                to="/dashboard"
-                className="px-3 py-2 rounded text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/alerts"
-                className="px-3 py-2 rounded text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-              >
-                Alerts
-              </Link>
-              <Link
-                to="/sensor-simulator"
-                className="px-3 py-2 rounded text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-              >
-                Sensor Simulator
-              </Link>
-              {isManager() && (
-                <Link
-                  to="/users"
-                  className="px-3 py-2 rounded text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-                >
-                  Users
-                </Link>
-              )}
+              {navLinks.map((link) => {
+                const isActive = location.pathname === link.to
+                  || (link.to === '/dashboard' && location.pathname.startsWith('/assets/'));
+
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'text-white bg-slate-700/80'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
           </div>
           <div className="flex items-center gap-4">
